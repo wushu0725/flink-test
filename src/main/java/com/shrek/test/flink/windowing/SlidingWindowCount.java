@@ -1,5 +1,6 @@
 package com.shrek.test.flink.windowing;
 
+import com.shrek.test.flink.windowing.watermaker.PeriodicWatermark;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.streaming.api.TimeCharacteristic;
@@ -19,7 +20,7 @@ import org.apache.flink.util.Collector;
  * @remark
  */
 public class SlidingWindowCount {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         // 设置flink的运行环境，这里会根据本地环境还是生成环境得到不同的对象。
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         // 设置时间语义为时间时间
@@ -44,14 +45,15 @@ public class SlidingWindowCount {
                     collector.collect(new Tuple3<>(splits[0],Long.valueOf(splits[1]),new Integer(splits[2])));
                 }
             }
-        });
+        }).assignTimestampsAndWatermarks(new PeriodicWatermark());
 
 
-//        counts.keyBy(0).assignTimestampsAndWatermarks(new BoundedOutOfOrdernessTimestampExtractor<Tuple3<String, Long, Integer>>() {
-//            @Override
-//            public long extractTimestamp(Tuple3<String, Long, Integer> stringLongIntegerTuple3) {
-//                return stringLongIntegerTuple3.f1;
-//            }
-//        }).timeWindowAll(Time.milliseconds(2500),Time.milliseconds(500));
+        SingleOutputStreamOperator<Tuple3<String, Long, Integer>> sum = counts.keyBy(0).
+                timeWindow(Time.milliseconds(1500),Time.milliseconds(200))  //这里带2个参数就是滑动窗口，带一个参数就是滚动窗口
+                .sum(2);
+
+        sum.print();
+
+        env.execute("slidingWindow");
     }
 }

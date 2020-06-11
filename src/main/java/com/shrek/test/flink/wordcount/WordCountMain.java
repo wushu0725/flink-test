@@ -1,6 +1,7 @@
 package com.shrek.test.flink.wordcount;
 
 import org.apache.flink.api.common.functions.FlatMapFunction;
+import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -15,7 +16,6 @@ import org.apache.flink.util.Collector;
  * @remark
  */
 public class WordCountMain {
-    private static int index = 1;
 
     public static void main(String[] args) throws Exception {
 
@@ -52,7 +52,7 @@ public class WordCountMain {
                     }
                 }
             }
-        }).keyBy(0)           //根据Tuple2的f0字段分组
+        }).returns(Types.TUPLE(Types.STRING, Types.INT)).keyBy(0)           //根据Tuple2的f0字段分组
                 .sum(1);    //根据Tuple2的f1字段累加
         result2.print();
         env.execute("WordCount： ");
